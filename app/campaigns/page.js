@@ -5,20 +5,7 @@ import { useSession } from "next-auth/react";
 import DeliveryLogs from "./DeliveryLogs";
 
 export default function Campaigns() {
-  const { data: session, status } = useSession(); // include status
-
-  // Guard against SSR / unauthenticated
-  if (status === "loading") {
-    return <p className="text-center py-5">Loading...</p>;
-  }
-
-  if (status === "unauthenticated") {
-    return (
-      <main className="container py-5 text-center">
-        <h2>Please sign in to access campaigns</h2>
-      </main>
-    );
-  }
+  const { data: session, status } = useSession();
 
   const [name, setName] = useState("");
   const [rules, setRules] = useState([{ field: "spend", operator: ">", value: "" }]);
@@ -38,8 +25,10 @@ export default function Campaigns() {
   }
 
   useEffect(() => {
-    fetchCampaigns();
-  }, []);
+    if (status === "authenticated") {
+      fetchCampaigns();
+    }
+  }, [status]);
 
   function addRule() {
     setRules([...rules, { field: "spend", operator: ">", value: "" }]);
@@ -112,171 +101,189 @@ export default function Campaigns() {
 
   return (
     <main className="container py-5">
-      <h2 className="mb-4">Create Campaign</h2>
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <div className="mb-3">
-            <input
-              type="text"
-              placeholder="Campaign Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="form-control"
-            />
-          </div>
+      {status === "loading" && (
+        <p className="text-center py-5">Loading...</p>
+      )}
 
-          <h5 className="mt-3">Rules</h5>
-          {rules.map((r, idx) => (
-            <div className="row g-2 align-items-center mb-2" key={idx}>
-              <div className="col-md-3">
-                <select
-                  className="form-select"
-                  value={r.field}
-                  onChange={(e) => updateRule(idx, "field", e.target.value)}
-                >
-                  <option value="spend">Spend</option>
-                  <option value="visits">Visits</option>
-                  <option value="inactiveDays">Inactive Days</option>
-                </select>
-              </div>
-              <div className="col-md-2">
-                <select
-                  className="form-select"
-                  value={r.operator}
-                  onChange={(e) => updateRule(idx, "operator", e.target.value)}
-                >
-                  <option value=">">&gt;</option>
-                  <option value="<">&lt;</option>
-                  <option value="=">=</option>
-                </select>
-              </div>
-              <div className="col-md-3">
+      {status === "unauthenticated" && (
+        <div className="text-center">
+          <h2>Please sign in to access campaigns</h2>
+        </div>
+      )}
+
+      {status === "authenticated" && (
+        <>
+          <h2 className="mb-4">Create Campaign</h2>
+          <div className="card shadow-sm mb-4">
+            <div className="card-body">
+              <div className="mb-3">
                 <input
-                  type="number"
+                  type="text"
+                  placeholder="Campaign Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="form-control"
-                  placeholder="Value"
-                  value={r.value}
-                  onChange={(e) => updateRule(idx, "value", e.target.value)}
                 />
               </div>
-              <div className="col-md-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-danger btn-sm"
-                  onClick={() => removeRule(idx)}
+
+              <h5 className="mt-3">Rules</h5>
+              {rules.map((r, idx) => (
+                <div className="row g-2 align-items-center mb-2" key={idx}>
+                  <div className="col-md-3">
+                    <select
+                      className="form-select"
+                      value={r.field}
+                      onChange={(e) => updateRule(idx, "field", e.target.value)}
+                    >
+                      <option value="spend">Spend</option>
+                      <option value="visits">Visits</option>
+                      <option value="inactiveDays">Inactive Days</option>
+                    </select>
+                  </div>
+                  <div className="col-md-2">
+                    <select
+                      className="form-select"
+                      value={r.operator}
+                      onChange={(e) => updateRule(idx, "operator", e.target.value)}
+                    >
+                      <option value=">">&gt;</option>
+                      <option value="<">&lt;</option>
+                      <option value="=">=</option>
+                    </select>
+                  </div>
+                  <div className="col-md-3">
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Value"
+                      value={r.value}
+                      onChange={(e) => updateRule(idx, "value", e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-2">
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={() => removeRule(idx)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" className="btn btn-outline-primary mb-3" onClick={addRule}>
+                + Add Rule
+              </button>
+
+              <div className="mb-3">
+                <label className="form-label me-2">Combine with:</label>
+                <select
+                  className="form-select w-auto d-inline-block"
+                  value={combinator}
+                  onChange={(e) => setCombinator(e.target.value)}
                 >
-                  Remove
+                  <option value="AND">AND</option>
+                  <option value="OR">OR</option>
+                </select>
+              </div>
+
+              <textarea
+                rows={3}
+                className="form-control mb-3"
+                placeholder="Message template (use {{name}})"
+                value={messageTemplate}
+                onChange={(e) => setMessageTemplate(e.target.value)}
+              />
+
+              {/* AI Suggestions */}
+              <div className="mb-3">
+                <input
+                  type="text"
+                  className="form-control mb-2"
+                  placeholder="Campaign Objective (for AI suggestions)"
+                  value={objective}
+                  onChange={(e) => setObjective(e.target.value)}
+                />
+                <button
+                  className="btn btn-warning"
+                  onClick={getAISuggestions}
+                  disabled={loadingAI || !objective}
+                >
+                  {loadingAI ? "Getting suggestions..." : "Get AI Suggestions"}
+                </button>
+
+                {aiSuggestions.length > 0 && (
+                  <div className="mt-3">
+                    <p>Suggestions:</p>
+                    <ul className="list-group">
+                      {aiSuggestions.map((s, idx) => (
+                        <li
+                          key={idx}
+                          className="list-group-item d-flex justify-content-between"
+                        >
+                          <span>{s}</span>
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => setMessageTemplate(s)}
+                          >
+                            Use
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="d-flex gap-2">
+                <button type="button" className="btn btn-info" onClick={previewAudience}>
+                  Preview Audience
+                </button>
+                <button type="button" className="btn btn-success" onClick={createCampaign}>
+                  Save Campaign
                 </button>
               </div>
             </div>
-          ))}
-          <button type="button" className="btn btn-outline-primary mb-3" onClick={addRule}>
-            + Add Rule
-          </button>
-
-          <div className="mb-3">
-            <label className="form-label me-2">Combine with:</label>
-            <select
-              className="form-select w-auto d-inline-block"
-              value={combinator}
-              onChange={(e) => setCombinator(e.target.value)}
-            >
-              <option value="AND">AND</option>
-              <option value="OR">OR</option>
-            </select>
           </div>
 
-          <textarea
-            rows={3}
-            className="form-control mb-3"
-            placeholder="Message template (use {{name}})"
-            value={messageTemplate}
-            onChange={(e) => setMessageTemplate(e.target.value)}
-          />
-
-          {/* AI Suggestions */}
-          <div className="mb-3">
-            <input
-              type="text"
-              className="form-control mb-2"
-              placeholder="Campaign Objective (for AI suggestions)"
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-            />
-            <button
-              className="btn btn-warning"
-              onClick={getAISuggestions}
-              disabled={loadingAI || !objective}
-            >
-              {loadingAI ? "Getting suggestions..." : "Get AI Suggestions"}
-            </button>
-
-            {aiSuggestions.length > 0 && (
-              <div className="mt-3">
-                <p>Suggestions:</p>
-                <ul className="list-group">
-                  {aiSuggestions.map((s, idx) => (
-                    <li key={idx} className="list-group-item d-flex justify-content-between">
-                      <span>{s}</span>
-                      <button
-                        className="btn btn-sm btn-success"
-                        onClick={() => setMessageTemplate(s)}
-                      >
-                        Use
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <h2 className="mt-4">Past Campaigns</h2>
+          <div className="table-responsive">
+            <table className="table table-striped table-hover mt-3">
+              <thead className="table-dark">
+                <tr>
+                  <th>Name</th>
+                  <th>Audience Size</th>
+                  <th>Status</th>
+                  <th>Sent</th>
+                  <th>Failed</th>
+                  <th>Pending</th>
+                  <th>Created At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((c) => (
+                  <tr key={c._id}>
+                    <td>{c.name}</td>
+                    <td>{c.audienceSize}</td>
+                    <td>{c.status}</td>
+                    <td>{c.stats?.sent}</td>
+                    <td>{c.stats?.failed}</td>
+                    <td>{c.stats?.pending}</td>
+                    <td>{c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="d-flex gap-2">
-            <button type="button" className="btn btn-info" onClick={previewAudience}>
-              Preview Audience
-            </button>
-            <button type="button" className="btn btn-success" onClick={createCampaign}>
-              Save Campaign
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <h2 className="mt-4">Past Campaigns</h2>
-      <div className="table-responsive">
-        <table className="table table-striped table-hover mt-3">
-          <thead className="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Audience Size</th>
-              <th>Status</th>
-              <th>Sent</th>
-              <th>Failed</th>
-              <th>Pending</th>
-              <th>Created At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {campaigns.map((c) => (
-              <tr key={c._id}>
-                <td>{c.name}</td>
-                <td>{c.audienceSize}</td>
-                <td>{c.status}</td>
-                <td>{c.stats?.sent}</td>
-                <td>{c.stats?.failed}</td>
-                <td>{c.stats?.pending}</td>
-                <td>{c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="mt-4">Delivery Logs (latest 20)</h2>
-      <DeliveryLogs />
+          <h2 className="mt-4">Delivery Logs (latest 20)</h2>
+          <DeliveryLogs />
+        </>
+      )}
     </main>
   );
 }
+
 
 
 
