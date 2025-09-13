@@ -1,5 +1,7 @@
 // app/api/vendor/route.js
 import { NextResponse } from "next/server";
+import { connectDB } from "@/lib/db";
+import CommunicationLog from "@/models/CommunicationLog";
 
 export async function POST(req) {
   try {
@@ -10,24 +12,52 @@ export async function POST(req) {
     // Simulate 90% success, 10% fail
     const status = Math.random() < 0.9 ? "SENT" : "FAILED";
 
-    // safe base URL fallback
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    // Instead of setTimeout (which doesn't work in serverless), 
+    // immediately update the status after simulating processing
+    await connectDB();
+    
+    // Simulate processing delay with a small random factor
+    const processingDelay = 100 + Math.floor(Math.random() * 200); // 100-300ms
+    await new Promise(resolve => setTimeout(resolve, processingDelay));
 
-    // Simulate async callback to delivery receipt API after 700-1500ms
-    setTimeout(async () => {
-      try {
-        console.log("VENDOR: calling delivery-receipt for", vendorMessageId, "status", status);
-        await fetch(`${baseUrl}/api/delivery-receipt`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ vendorMessageId, status, logId }),
-        });
-      } catch (err) {
-        console.error("VENDOR: delivery-receipt callback failed", err);
-      }
-    }, 700 + Math.floor(Math.random() * 800));
+    // Update the communication log directly
+    let log = null;
+    if (vendorMessageId) {
+      log = await CommunicationLog.findOneAndUpdate(
+        { vendorMessageId },
+        { 
+          status, 
+          vendorMeta: { 
+            lastUpdatedAt: new Date(), 
+            processingTime: processingDelay,
+            simulatedVendorResponse: { status, timestamp: new Date() }
+          } 
+        },
+        { new: true }
+      );
+    }
+    if (!log && logId) {
+      log = await CommunicationLog.findOneAndUpdate(
+        { _id: logId },
+        { 
+          status, 
+          vendorMeta: { 
+            lastUpdatedAt: new Date(), 
+            processingTime: processingDelay,
+            simulatedVendorResponse: { status, timestamp: new Date() }
+          } 
+        },
+        { new: true }
+      );
+    }
 
-    return NextResponse.json({ ok: true, vendorMessageId });
+    if (log) {
+      console.log("VENDOR: updated log", log._id.toString(), "->", log.status);
+    } else {
+      console.warn("VENDOR: no log found for", { vendorMessageId, logId });
+    }
+
+    return NextResponse.json({ ok: true, vendorMessageId, status });
   } catch (e) {
     console.error("vendor route error:", e);
     return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
