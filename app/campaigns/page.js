@@ -5,7 +5,21 @@ import { useSession } from "next-auth/react";
 import DeliveryLogs from "./DeliveryLogs";
 
 export default function Campaigns() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession(); // include status
+
+  // Guard against SSR / unauthenticated
+  if (status === "loading") {
+    return <p className="text-center py-5">Loading...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <main className="container py-5 text-center">
+        <h2>Please sign in to access campaigns</h2>
+      </main>
+    );
+  }
+
   const [name, setName] = useState("");
   const [rules, setRules] = useState([{ field: "spend", operator: ">", value: "" }]);
   const [combinator, setCombinator] = useState("AND");
@@ -263,5 +277,6 @@ export default function Campaigns() {
     </main>
   );
 }
+
 
 

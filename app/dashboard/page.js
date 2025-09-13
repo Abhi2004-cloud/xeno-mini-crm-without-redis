@@ -4,7 +4,23 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function Dashboard() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return (
+      <main className="container py-5 text-center">
+        <p>Loading...</p>
+      </main>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <main className="container py-5 text-center">
+        <h2>Please sign in to access the dashboard</h2>
+      </main>
+    );
+  }
 
   return (
     <main className="container py-5">
@@ -30,4 +46,5 @@ export default function Dashboard() {
     </main>
   );
 }
+
 
