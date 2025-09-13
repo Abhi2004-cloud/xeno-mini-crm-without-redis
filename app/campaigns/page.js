@@ -23,13 +23,25 @@ export default function Campaigns() {
   const [loadingAI, setLoadingAI] = useState(false);
 
   async function fetchCampaigns() {
-    const res = await fetch("/api/campaigns");
-    const data = await res.json();
-    if (data.ok) setCampaigns(data.campaigns);
+    try {
+      const res = await fetch("/api/campaigns");
+      const data = await res.json();
+      if (data.ok) {
+        setCampaigns(data.campaigns);
+        console.log("Campaigns updated:", data.campaigns.length, "campaigns");
+      } else {
+        console.error("Failed to fetch campaigns:", data.error);
+      }
+    } catch (e) {
+      console.error("fetchCampaigns error", e);
+    }
   }
 
   useEffect(() => {
     fetchCampaigns();
+    // Poll for campaign updates every 3 seconds
+    const interval = setInterval(fetchCampaigns, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // Conditional returns must come after all hooks

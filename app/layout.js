@@ -15,6 +15,12 @@ export default function RootLayout({ children }) {
           {children}
         </Providers>
 
+        {/* Load Bootstrap Icons CSS */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+        />
+        
         {/* Load Bootstrap JS properly */}
         <Script
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"

@@ -91,18 +91,23 @@ export async function POST(req) {
     const insertedLogs = await CommunicationLog.insertMany(logs);
 
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    insertedLogs.forEach((l) =>
-      fetch(`${baseUrl}/api/vendor`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          logId: l._id,
-          vendorMessageId: l.vendorMessageId,
-          customerEmail: l.customerEmail,
-          message: l.message,
-        }),
-      }).catch((err) =>
-        console.error("vendor call failed", l._id, err?.message || err)
+    
+    // Wait for all vendor calls to complete before returning
+    await Promise.allSettled(
+      insertedLogs.map((l) =>
+        fetch(`${baseUrl}/api/vendor`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            logId: l._id,
+            vendorMessageId: l.vendorMessageId,
+            customerEmail: l.customerEmail,
+            message: l.message,
+          }),
+        }).catch((err) => {
+          console.error("vendor call failed", l._id, err?.message || err);
+          return null;
+        })
       )
     );
 
