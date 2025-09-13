@@ -1,3 +1,4 @@
+//app/campaigns/page.js
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -6,15 +7,12 @@ import DeliveryLogs from "./DeliveryLogs";
 export default function Campaigns() {
   const { data: session } = useSession();
   const [name, setName] = useState("");
-
-  // dynamic rules state
   const [rules, setRules] = useState([{ field: "spend", operator: ">", value: "" }]);
   const [combinator, setCombinator] = useState("AND");
-
   const [messageTemplate, setMessageTemplate] = useState("Hi {{name}}, here’s 10% off!");
   const [campaigns, setCampaigns] = useState([]);
 
-  // AI states
+  // AI
   const [objective, setObjective] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [loadingAI, setLoadingAI] = useState(false);
@@ -29,7 +27,6 @@ export default function Campaigns() {
     fetchCampaigns();
   }, []);
 
-  // dynamic rule handlers
   function addRule() {
     setRules([...rules, { field: "spend", operator: ">", value: "" }]);
   }
@@ -50,13 +47,9 @@ export default function Campaigns() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rules, combinator }),
     });
-
     const data = await res.json();
-    if (data.ok) {
-      alert(`Audience size: ${data.audienceSize}`);
-    } else {
-      alert("Error: " + data.error);
-    }
+    if (data.ok) alert(`Audience size: ${data.audienceSize}`);
+    else alert("Error: " + data.error);
   }
 
   async function createCampaign() {
@@ -78,9 +71,7 @@ export default function Campaigns() {
       setCombinator("AND");
       setMessageTemplate("Hi {{name}}, here’s 10% off!");
       fetchCampaigns();
-    } else {
-      alert("Error: " + data.error);
-    }
+    } else alert("Error: " + data.error);
   }
 
   async function getAISuggestions() {
@@ -96,11 +87,8 @@ export default function Campaigns() {
         }),
       });
       const data = await res.json();
-      if (data.ok) {
-        setAiSuggestions(data.suggestions);
-      } else {
-        alert("AI Error: " + data.error);
-      }
+      if (data.ok) setAiSuggestions(data.suggestions);
+      else alert("AI Error: " + data.error);
     } catch (e) {
       alert("AI call failed: " + e.message);
     } finally {
@@ -109,127 +97,171 @@ export default function Campaigns() {
   }
 
   return (
-    <main style={{ padding: 24 }}>
-      <h2>Create Campaign</h2>
-      <div style={{ marginBottom: 20 }}>
-        <input
-          type="text"
-          placeholder="Campaign Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ display: "block", marginBottom: 8, padding: 6 }}
-        />
-
-        {/* Rule Builder */}
-        <h4>Rules</h4>
-        {rules.map((r, idx) => (
-          <div key={idx} style={{ display: "flex", gap: "8px", marginBottom: 6 }}>
-            <select value={r.field} onChange={(e) => updateRule(idx, "field", e.target.value)}>
-              <option value="spend">Spend</option>
-              <option value="visits">Visits</option>
-              <option value="inactiveDays">Inactive Days</option>
-            </select>
-            <select value={r.operator} onChange={(e) => updateRule(idx, "operator", e.target.value)}>
-              <option value=">">{">"}</option>
-              <option value="<">{"<"}</option>
-              <option value="=">=</option>
-            </select>
+    <main className="container py-5">
+      <h2 className="mb-4">Create Campaign</h2>
+      <div className="card shadow-sm mb-4">
+        <div className="card-body">
+          <div className="mb-3">
             <input
-              type="number"
-              value={r.value}
-              onChange={(e) => updateRule(idx, "value", e.target.value)}
-              placeholder="Value"
+              type="text"
+              placeholder="Campaign Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="form-control"
             />
-            <button onClick={() => removeRule(idx)}>Remove</button>
           </div>
-        ))}
-        <button type="button" onClick={addRule}>+ Add Rule</button>
 
-        <div style={{ margin: "8px 0" }}>
-          <label>
-            Combine with:
-            <select value={combinator} onChange={(e) => setCombinator(e.target.value)}>
+          <h5 className="mt-3">Rules</h5>
+          {rules.map((r, idx) => (
+            <div className="row g-2 align-items-center mb-2" key={idx}>
+              <div className="col-md-3">
+                <select
+                  className="form-select"
+                  value={r.field}
+                  onChange={(e) => updateRule(idx, "field", e.target.value)}
+                >
+                  <option value="spend">Spend</option>
+                  <option value="visits">Visits</option>
+                  <option value="inactiveDays">Inactive Days</option>
+                </select>
+              </div>
+              <div className="col-md-2">
+                <select
+                  className="form-select"
+                  value={r.operator}
+                  onChange={(e) => updateRule(idx, "operator", e.target.value)}
+                >
+                  <option value=">">&gt;</option>
+                  <option value="<">&lt;</option>
+                  <option value="=">=</option>
+                </select>
+              </div>
+              <div className="col-md-3">
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Value"
+                  value={r.value}
+                  onChange={(e) => updateRule(idx, "value", e.target.value)}
+                />
+              </div>
+              <div className="col-md-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => removeRule(idx)}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          <button type="button" className="btn btn-outline-primary mb-3" onClick={addRule}>
+            + Add Rule
+          </button>
+
+          <div className="mb-3">
+            <label className="form-label me-2">Combine with:</label>
+            <select
+              className="form-select w-auto d-inline-block"
+              value={combinator}
+              onChange={(e) => setCombinator(e.target.value)}
+            >
               <option value="AND">AND</option>
               <option value="OR">OR</option>
             </select>
-          </label>
-        </div>
+          </div>
 
-        <textarea
-          rows={3}
-          placeholder="Message template (use {{name}})"
-          value={messageTemplate}
-          onChange={(e) => setMessageTemplate(e.target.value)}
-          style={{ display: "block", marginBottom: 8, padding: 6, width: "100%" }}
-        />
-
-        {/* AI Suggestions */}
-        <div style={{ marginTop: 10, marginBottom: 20 }}>
-          <input
-            type="text"
-            placeholder="Campaign Objective (for AI suggestions)"
-            value={objective}
-            onChange={(e) => setObjective(e.target.value)}
-            style={{ display: "block", marginBottom: 8, padding: 6, width: "100%" }}
+          <textarea
+            rows={3}
+            className="form-control mb-3"
+            placeholder="Message template (use {{name}})"
+            value={messageTemplate}
+            onChange={(e) => setMessageTemplate(e.target.value)}
           />
-          <button onClick={getAISuggestions} disabled={loadingAI || !objective}>
-            {loadingAI ? "Getting suggestions..." : "Get AI Suggestions"}
-          </button>
 
-          {aiSuggestions.length > 0 && (
-            <div style={{ marginTop: 10 }}>
-              <p>Suggestions:</p>
-              <ul>
-                {aiSuggestions.map((s, idx) => (
-                  <li key={idx} style={{ marginBottom: 4 }}>
-                    <button onClick={() => setMessageTemplate(s)} style={{ marginRight: 8 }}>
-                      Use
-                    </button>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
+          {/* AI Suggestions */}
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control mb-2"
+              placeholder="Campaign Objective (for AI suggestions)"
+              value={objective}
+              onChange={(e) => setObjective(e.target.value)}
+            />
+            <button
+              className="btn btn-warning"
+              onClick={getAISuggestions}
+              disabled={loadingAI || !objective}
+            >
+              {loadingAI ? "Getting suggestions..." : "Get AI Suggestions"}
+            </button>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: 12 }}>
-          <button type="button" onClick={previewAudience}>Preview Audience</button>
-          <button type="button" onClick={createCampaign}>Save Campaign</button>
+            {aiSuggestions.length > 0 && (
+              <div className="mt-3">
+                <p>Suggestions:</p>
+                <ul className="list-group">
+                  {aiSuggestions.map((s, idx) => (
+                    <li key={idx} className="list-group-item d-flex justify-content-between">
+                      <span>{s}</span>
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => setMessageTemplate(s)}
+                      >
+                        Use
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="d-flex gap-2">
+            <button type="button" className="btn btn-info" onClick={previewAudience}>
+              Preview Audience
+            </button>
+            <button type="button" className="btn btn-success" onClick={createCampaign}>
+              Save Campaign
+            </button>
+          </div>
         </div>
       </div>
 
-      <h2>Past Campaigns</h2>
-      <table border="1" cellPadding="6" style={{ borderCollapse: "collapse", marginTop: 12 }}>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Audience Size</th>
-            <th>Status</th>
-            <th>Sent</th>
-            <th>Failed</th>
-            <th>Pending</th>
-            <th>Created At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {campaigns.map((c) => (
-            <tr key={c._id}>
-              <td>{c.name}</td>
-              <td>{c.audienceSize}</td>
-              <td>{c.status}</td>
-              <td>{c.stats?.sent}</td>
-              <td>{c.stats?.failed}</td>
-              <td>{c.stats?.pending}</td>
-              <td>{c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}</td>
+      <h2 className="mt-4">Past Campaigns</h2>
+      <div className="table-responsive">
+        <table className="table table-striped table-hover mt-3">
+          <thead className="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Audience Size</th>
+              <th>Status</th>
+              <th>Sent</th>
+              <th>Failed</th>
+              <th>Pending</th>
+              <th>Created At</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {campaigns.map((c) => (
+              <tr key={c._id}>
+                <td>{c.name}</td>
+                <td>{c.audienceSize}</td>
+                <td>{c.status}</td>
+                <td>{c.stats?.sent}</td>
+                <td>{c.stats?.failed}</td>
+                <td>{c.stats?.pending}</td>
+                <td>{c.createdAt ? new Date(c.createdAt).toLocaleString() : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <h2>Delivery Logs (latest 20)</h2>
+      <h2 className="mt-4">Delivery Logs (latest 20)</h2>
       <DeliveryLogs />
     </main>
   );
 }
+
 

@@ -1,3 +1,4 @@
+//app/ingest/page.js
 "use client";
 import { useEffect, useState } from "react";
 
@@ -45,72 +46,88 @@ export default function IngestPage() {
   }
 
   return (
-    <main style={{ padding: 24 }}>
-      <h2>Add Customer</h2>
-      <form onSubmit={addCustomer} style={{ marginBottom: 24 }}>
-        <input
-          type="text"
-          placeholder="Name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-          style={{ display: "block", marginBottom: 8, padding: 6 }}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          required
-          style={{ display: "block", marginBottom: 8, padding: 6 }}
-        />
-        <input
-          type="number"
-          placeholder="Total Spend"
-          value={form.totalSpend}
-          onChange={(e) => setForm({ ...form, totalSpend: e.target.value })}
-          style={{ display: "block", marginBottom: 8, padding: 6 }}
-        />
-        <input
-          type="number"
-          placeholder="Visits"
-          value={form.visits}
-          onChange={(e) => setForm({ ...form, visits: e.target.value })}
-          style={{ display: "block", marginBottom: 8, padding: 6 }}
-        />
-        <input
-          type="date"
-          placeholder="Last Active At"
-          value={form.lastActiveAt}
-          onChange={(e) => setForm({ ...form, lastActiveAt: e.target.value })}
-          style={{ display: "block", marginBottom: 8, padding: 6 }}
-        />
-        <button type="submit">Add Customer</button>
+    <main className="container py-4">
+      <h2 className="mb-4">Add Customer</h2>
+      <form onSubmit={addCustomer} className="row g-3 mb-4">
+        <div className="col-md-4">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+        </div>
+        <div className="col-md-4">
+          <input
+            type="email"
+            className="form-control"
+            placeholder="Email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+          />
+        </div>
+        <div className="col-md-2">
+          <input
+            type="number"
+            className="form-control"
+            placeholder="Total Spend"
+            value={form.totalSpend}
+            onChange={(e) => setForm({ ...form, totalSpend: e.target.value })}
+          />
+        </div>
+        <div className="col-md-2">
+          <input
+            type="number"
+            className="form-control"
+            placeholder="Visits"
+            value={form.visits}
+            onChange={(e) => setForm({ ...form, visits: e.target.value })}
+          />
+        </div>
+        <div className="col-md-3">
+          <input
+            type="date"
+            className="form-control"
+            value={form.lastActiveAt}
+            onChange={(e) => setForm({ ...form, lastActiveAt: e.target.value })}
+          />
+        </div>
+        <div className="col-md-3">
+          <button type="submit" className="btn btn-success w-100">
+            Add Customer
+          </button>
+        </div>
       </form>
 
       <h2>Customers</h2>
-      <table border="1" cellPadding="6" style={{ borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Total Spend</th>
-            <th>Visits</th>
-            <th>Last Active</th>
-          </tr>
-        </thead>
-        <tbody>
-          {customers.map((c) => (
-            <tr key={c._id}>
-              <td>{c.name}</td>
-              <td>{c.email}</td>
-              <td>{c.totalSpend}</td>
-              <td>{c.visits}</td>
-              <td>{new Date(c.lastActiveAt).toISOString().split("T")[0]}</td>
+      <div className="table-responsive">
+        <table className="table table-striped table-bordered mt-3">
+          <thead className="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Total Spend</th>
+              <th>Visits</th>
+              <th>Last Active</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {customers.map((c) => (
+              <tr key={c._id}>
+                <td>{c.name}</td>
+                <td>{c.email}</td>
+                <td>{c.totalSpend}</td>
+                <td>{c.visits}</td>
+                <td>{new Date(c.lastActiveAt).toISOString().split("T")[0]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </main>
   );
 }
+
