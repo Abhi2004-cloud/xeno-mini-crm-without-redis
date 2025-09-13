@@ -90,26 +90,29 @@ export async function POST(req) {
       .default;
     const insertedLogs = await CommunicationLog.insertMany(logs);
 
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    // Instead of making external HTTP calls, directly update the logs
+    // This avoids baseUrl issues and is more reliable in serverless
+    console.log("CAMPAIGNS: Processing", insertedLogs.length, "logs directly");
     
-    // Wait for all vendor calls to complete before returning
-    await Promise.allSettled(
-      insertedLogs.map((l) =>
-        fetch(`${baseUrl}/api/vendor`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            logId: l._id,
-            vendorMessageId: l.vendorMessageId,
-            customerEmail: l.customerEmail,
-            message: l.message,
-          }),
-        }).catch((err) => {
-          console.error("vendor call failed", l._id, err?.message || err);
-          return null;
-        })
-      )
-    );
+    for (const log of insertedLogs) {
+      try {
+        // Simulate 90% success, 10% fail
+        const status = Math.random() < 0.9 ? "SENT" : "FAILED";
+        
+        await CommunicationLog.findByIdAndUpdate(log._id, {
+          status,
+          vendorMeta: {
+            lastUpdatedAt: new Date(),
+            processedBy: "direct-processing",
+            simulatedVendorResponse: { status, timestamp: new Date() }
+          }
+        });
+        
+        console.log("CAMPAIGNS: Updated log", log._id.toString(), "->", status);
+      } catch (err) {
+        console.error("CAMPAIGNS: Failed to update log", log._id, err?.message || err);
+      }
+    }
 
     return NextResponse.json({
       ok: true,
