@@ -1,4 +1,4 @@
-import Providers from "./providers";
+import Providers from "./providers.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Script from "next/script";
 
@@ -11,7 +11,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
 
         {/* Load Bootstrap JS properly */}
         <Script

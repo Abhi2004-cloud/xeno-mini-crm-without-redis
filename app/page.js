@@ -1,81 +1,41 @@
 "use client";
+
+export const dynamic = "force-dynamic";
+
 import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
 export default function Home() {
   const { data: session, status } = useSession();
 
-  return (
-    <main className="container py-5">
-      {/* Hero Section */}
-      <div className="text-center mb-5">
-        <h1 className="display-4 fw-bold">Welcome to Xeno Mini CRM</h1>
-        <p className="lead text-muted mb-4">
-          Manage your customers, create personalized campaigns, and leverage AI
-          for smarter insights.
-        </p>
+  if (status === "loading") {
+    return <p className="text-center py-5">Loading...</p>;
+  }
 
-        {status === "authenticated" ? (
-          <>
-            <p className="mb-3">
-              Signed in as <strong>{session.user?.email}</strong>
-            </p>
-            <button
-              className="btn btn-outline-danger me-2"
-              onClick={() => signOut()}
-            >
-              Sign out
-            </button>
+  return (
+    <main className="container py-5 text-center">
+      <h1 className="mb-3">Xeno Mini CRM</h1>
+      <p className="mb-4 text-muted">Login with Google to continue.</p>
+
+      {status === "authenticated" ? (
+        <>
+          <p className="mb-3">Signed in as {session.user?.email}</p>
+          <button className="btn btn-danger mb-3" onClick={() => signOut()}>
+            Sign out
+          </button>
+          <div>
             <Link href="/dashboard" className="btn btn-primary">
               Go to Dashboard →
             </Link>
-          </>
-        ) : (
-          <button
-            className="btn btn-success btn-lg"
-            onClick={() => signIn("google")}
-          >
-            Sign in with Google
-          </button>
-        )}
-      </div>
-
-      {/* Features Section */}
-      <div className="row text-center">
-        <div className="col-md-4">
-          <div className="card border-0 shadow-sm mb-4">
-            <div className="card-body">
-              <h5 className="card-title">Customer Ingestion</h5>
-              <p className="card-text">
-                Easily add and manage customer data for segmentation and
-                targeting.
-              </p>
-            </div>
           </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card border-0 shadow-sm mb-4">
-            <div className="card-body">
-              <h5 className="card-title">Campaign Builder</h5>
-              <p className="card-text">
-                Create campaigns with dynamic rules, AI message suggestions, and
-                insights.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card border-0 shadow-sm mb-4">
-            <div className="card-body">
-              <h5 className="card-title">AI-Powered Insights</h5>
-              <p className="card-text">
-                Leverage AI for personalized messages, summaries, and smarter
-                campaigns.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <button className="btn btn-success" onClick={() => signIn("google")}>
+          Sign in with Google
+        </button>
+      )}
     </main>
   );
 }
+
+

@@ -1,20 +1,13 @@
-//app/campaigns/page.js
+// app/campaigns/CampaignsClient.jsx
 "use client";
-
-export const dynamic = "force-dynamic";
-
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import DeliveryLogs from "./DeliveryLogs";
 
-export default function Campaigns() {
-  const { data: session, status } = useSession();
-
-  // All hooks must be called before any conditional returns
+export default function CampaignsClient() {
   const [name, setName] = useState("");
   const [rules, setRules] = useState([{ field: "spend", operator: ">", value: "" }]);
   const [combinator, setCombinator] = useState("AND");
-  const [messageTemplate, setMessageTemplate] = useState("Hi {{name}}, here's 10% off!");
+  const [messageTemplate, setMessageTemplate] = useState("Hi {{name}}, here’s 10% off!");
   const [campaigns, setCampaigns] = useState([]);
 
   // AI
@@ -23,27 +16,18 @@ export default function Campaigns() {
   const [loadingAI, setLoadingAI] = useState(false);
 
   async function fetchCampaigns() {
-    const res = await fetch("/api/campaigns");
-    const data = await res.json();
-    if (data.ok) setCampaigns(data.campaigns);
+    try {
+      const res = await fetch("/api/campaigns");
+      const data = await res.json();
+      if (data.ok) setCampaigns(data.campaigns);
+    } catch (e) {
+      console.error("fetchCampaigns error", e);
+    }
   }
 
   useEffect(() => {
     fetchCampaigns();
   }, []);
-
-  // Conditional returns must come after all hooks
-  if (status === "loading") {
-    return <p className="text-center py-5">Loading...</p>;
-  }
-
-  if (status === "unauthenticated") {
-    return (
-      <main className="container py-5 text-center">
-        <h2>Please sign in to access campaigns</h2>
-      </main>
-    );
-  }
 
   function addRule() {
     setRules([...rules, { field: "spend", operator: ">", value: "" }]);
@@ -60,36 +44,46 @@ export default function Campaigns() {
   }
 
   async function previewAudience() {
-    const res = await fetch("/api/customers/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rules, combinator }),
-    });
-    const data = await res.json();
-    if (data.ok) alert(`Audience size: ${data.audienceSize}`);
-    else alert("Error: " + data.error);
+    try {
+      const res = await fetch("/api/customers/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rules, combinator }),
+      });
+      const data = await res.json();
+      if (data.ok) alert(`Audience size: ${data.audienceSize}`);
+      else alert("Error: " + data.error);
+    } catch (e) {
+      alert("Preview failed: " + e.message);
+    }
   }
 
   async function createCampaign() {
-    const res = await fetch("/api/campaigns", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        rules,
-        combinator,
-        messageTemplate,
-      }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      alert(`Campaign created! Audience size: ${data.campaign.audienceSize}`);
-      setName("");
-      setRules([{ field: "spend", operator: ">", value: "" }]);
-      setCombinator("AND");
-      setMessageTemplate("Hi {{name}}, here’s 10% off!");
-      fetchCampaigns();
-    } else alert("Error: " + data.error);
+    try {
+      const res = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          rules,
+          combinator,
+          messageTemplate,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert(`Campaign created! Audience size: ${data.campaign.audienceSize}`);
+        setName("");
+        setRules([{ field: "spend", operator: ">", value: "" }]);
+        setCombinator("AND");
+        setMessageTemplate("Hi {{name}}, here’s 10% off!");
+        fetchCampaigns();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (e) {
+      alert("Create failed: " + e.message);
+    }
   }
 
   async function getAISuggestions() {
@@ -105,7 +99,7 @@ export default function Campaigns() {
         }),
       });
       const data = await res.json();
-      if (data.ok) setAiSuggestions(data.suggestions);
+      if (data.ok) setAiSuggestions(data.suggestions || []);
       else alert("AI Error: " + data.error);
     } catch (e) {
       alert("AI call failed: " + e.message);
@@ -198,7 +192,6 @@ export default function Campaigns() {
             onChange={(e) => setMessageTemplate(e.target.value)}
           />
 
-          {/* AI Suggestions */}
           <div className="mb-3">
             <input
               type="text"
